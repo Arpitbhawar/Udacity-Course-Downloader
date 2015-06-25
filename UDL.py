@@ -1,5 +1,6 @@
 import argparse
 import urllib2 as ul
+import json
 from bs4 import BeautifulSoup
 
 def is_lecture(link):    #this is given priority as always videos comes first
@@ -24,6 +25,18 @@ def is_Q_and_A(link):
 parser = argparse.ArgumentParser()
 parser.add_argument("classId", help="display the udacity class id entered")
 args = parser.parse_args()
+
+# course name extracted for making folder with that
+# 25-6-2015 starts -- folder name
+udacity_api_response=ul.urlopen('https://udacity.com/public-api/v0/courses')
+json_response = json.loads(udacity_api_response.read())
+for course in json_response['courses']:
+    if course['key']==args.classId :
+       course_name=course['title']
+       break
+print (course_name)
+# 25-6-2015 ends -- folder name
+
 course_link="https://www.udacity.com/wiki/"+args.classId+"/downloads"
 response=ul.urlopen(course_link)
 page_content=response.read()
