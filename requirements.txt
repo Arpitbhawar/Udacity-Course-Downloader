@@ -1,0 +1,11 @@
+#user need to import the following things before hand
+import argparse                 # pip install argparse
+import urllib2 as ul            # comes with python 2.7 onwards
+import json                     # pip install simplejson
+import os                       # inbuilt
+from bs4 import BeautifulSoup   # pip install beautifulsoup4
+import sys                      # inbuilt  
+import time                     # inbuilt
+import subprocess               # inbuilt
+import threading                # inbuilt
+import requests                 # sudo pip install requests
