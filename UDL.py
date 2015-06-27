@@ -26,17 +26,33 @@ def is_Office_Hours(link):
 def is_Q_and_A(link):
     if "q_&_a" in link:
         return True
+def get_size(start_path = 'AppliedCryptography/Subtitles'):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            total_size += os.path.getsize(fp)
+    return total_size
 
-def download(key):
+
+def progress(filesize,total):
+    try:
+        frac = float(filesize)/float(total)
+    except:
+        frac = 0
+    #sys.stdout.write("\r%s %3i%%" % (filename +" ", frac*100)  )
+    return frac*100
+
+def download(key,total):
     #href=downloadables[key]
     #href1=href[0:len(href)//2]
     #href2=href[len(href)//2:]
 
 
-    thread1 = threading.Thread(target=Thread1,args=(key,))
-    thread2 = threading.Thread(target=Thread2,args=(key,))
-    thread3 = threading.Thread(target=Thread3,args=(key,))
-    thread4 = threading.Thread(target=Thread4,args=(key,))
+    thread1 = threading.Thread(target=Thread1,args=(key,total,))
+    thread2 = threading.Thread(target=Thread2,args=(key,total,))
+    thread3 = threading.Thread(target=Thread3,args=(key,total,))
+    thread4 = threading.Thread(target=Thread4,args=(key,total,))
     thread1.daemon=True
     thread2.daemon=True
     thread3.daemon=True
@@ -57,7 +73,7 @@ def download(key):
         path=path+"/"+filename
         subprocess.call(["curl" ,"-L","-C","-",url,"-o",path])
     """
-def Thread1(key):
+def Thread1(key,total):
     #print "Thread1 "+key
     href=downloadables[key]
     links=href[0:len(href)//4]
@@ -65,9 +81,24 @@ def Thread1(key):
         url=links[i].encode('utf-8')
         filename=url.split("/")[-1].strip()
         path=cur_path+"/"+Main_dir+"/"+key+"/"+filename
-        subprocess.call(["curl" ,"-L","-C","-",url,"-o",path])
+        
+        
 
-def Thread2(key):
+        
+        try:
+            subprocess.call(["curl" ,"-L","-s","-C","-",url,"-o",path])
+            #filesize=os.path.getsize(Main_dir+"/"+key)
+            filesize=get_size(Main_dir+"/"+key)
+            #print filesize
+            sys.stdout.write(key+" Download progress: %d%%   \r" % (progress(filesize,total)) )
+            sys.stdout.flush()
+            
+        except:
+            errorLog.append(filename)
+            print "Exception in downloading file "+filename +" Check if file is already downloaded"
+    
+
+def Thread2(key,total):
     #print "Thread2 "+key
     href=downloadables[key]
     links=href[len(href)//4:2*(len(href)//4)]
@@ -75,9 +106,23 @@ def Thread2(key):
         url=links[i].encode('utf-8')
         filename=url.split("/")[-1].strip()
         path=cur_path+"/"+Main_dir+"/"+key+"/"+filename
-        subprocess.call(["curl" ,"-L","-C","-",url,"-o",path])
+
+        
+        
+        try:
+            subprocess.call(["curl" ,"-L","-s","-C","-",url,"-o",path])
+            #filesize=os.path.getsize(Main_dir+"/"+key)
+            filesize=get_size(Main_dir+"/"+key)
+            #print filesize
+            sys.stdout.write(key +" Download progress: %d%%   \r" % (progress(filesize,total)) )
+            sys.stdout.flush()
+            
+        except:
+            errorLog.append(filename)
+            print "Exception in downloading file "+filename +" Check if file is already downloaded"
     
-def Thread3(key):
+    
+def Thread3(key,total):
     #print "Thread2 "+key
     href=downloadables[key]
     links=href[2*(len(href)//4):3*(len(href)//4)]
@@ -85,9 +130,23 @@ def Thread3(key):
         url=links[i].encode('utf-8')
         filename=url.split("/")[-1].strip()
         path=cur_path+"/"+Main_dir+"/"+key+"/"+filename
-        subprocess.call(["curl" ,"-L","-C","-",url,"-o",path])
+
+        
+        
+        try:
+            subprocess.call(["curl" ,"-L","-s","-C","-",url,"-o",path])
+            #filesize=os.path.getsize(Main_dir+"/"+key)
+            filesize=get_size(Main_dir+"/"+key)
+            #print filesize
+            sys.stdout.write(key+" Download progress: %d%%   \r" % (progress(filesize,total)) )
+            sys.stdout.flush()
+
+        except:
+            errorLog.append(filename)
+            print "Exception in downloading file "+filename +" Check if file is already downloaded"
     
-def Thread4(key):
+    
+def Thread4(key,total):
     #print "Thread2 "+key
     href=downloadables[key]
     links=href[3*(len(href)//4):]
@@ -95,7 +154,19 @@ def Thread4(key):
         url=links[i].encode('utf-8')
         filename=url.split("/")[-1].strip()
         path=cur_path+"/"+Main_dir+"/"+key+"/"+filename
-        subprocess.call(["curl" ,"-L","-C","-",url,"-o",path])
+
+        
+        try:
+            subprocess.call(["curl" ,"-L","-s","-C","-",url,"-o",path])
+            #filesize=os.path.getsize(Main_dir+"/"+key)
+            filesize=get_size(Main_dir+"/"+key)
+            #print filesize
+            sys.stdout.write(key+" Download progress: %d%%   \r" % (progress(filesize,total)) )
+            sys.stdout.flush()
+
+        except:
+            errorLog.append(filename)
+            print "Exception in downloading file "+filename +" Check if file is already downloaded"
     
 
 
@@ -137,6 +208,7 @@ downloadables["Office_Hours"]=[]  # track Id = 3
 downloadables["Q_&_A"]=[]         # track Id = 4
 downloadables["Others"]=[]
 
+errorLog=[]
 
 for a in anchors:
     if a.has_attr('href'):
@@ -186,11 +258,23 @@ for key in downloadables:
             path=path+"/"+filename
             subprocess.call(["curl" ,"-L","-C","-",url,"-o",path])
 """
+filesize=0
 start_time = time.time()
 for key in downloadables:
-    if key=="Problem_Set":
+
+    filesize=0
+    total=965019
+    if key=="Subtitles":
        if  len(downloadables[key]) > 0:
            if not os.path.exists(Main_dir+"/"+key):
                   os.makedirs(Main_dir+"/"+key)
-           download(key)        
+           download(key,total)        
 print("--- %s seconds to read and write ---" % (time.time() - start_time))
+
+errString="["
+if len(errorLog)>0:
+   for i in (0,len(errorLog)):
+       errString=errString+errorLog[i]+" "
+   print errString + "] Check if these files are already downloaded if not resume the download"
+else:
+   print "All the files successfully downloaded"
