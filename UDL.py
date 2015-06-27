@@ -1,13 +1,13 @@
-import argparse
-import urllib2 as ul
-import json
-import os
-from bs4 import BeautifulSoup
-import pycurl
-import sys
-import time
-import subprocess
-import threading
+import argparse                 # pip install argparse
+import urllib2 as ul            # comes with python 2.7 onwards
+import json                     # pip install simplejson
+import os                       # inbuilt
+from bs4 import BeautifulSoup   # pip install beautifulsoup4
+import sys                      # inbuilt  
+import time                     # inbuilt
+import subprocess               # 
+import threading                #
+import requests                 # sudo pip install requests
 # install lxml "sudo pip install lxml" and apt-get install python-lxml
 
 def is_lecture(link):    #this is given priority as always videos comes first
@@ -171,7 +171,7 @@ def Thread4(key,total):
 
 
 
-
+start_time = time.time()
 parser = argparse.ArgumentParser()
 parser.add_argument("classId", help="display the udacity class id entered")
 args = parser.parse_args()
@@ -184,7 +184,10 @@ for course in json_response['courses']:
     if course['key']==args.classId :
        course_name=course['title']
        break
-Main_dir=course_name.strip().replace(" ","")
+try:
+    Main_dir=course_name.strip().replace(" ","")
+except:
+    print "Enter a valid Class Id Ex cs387"
 if not os.path.exists(Main_dir):
        os.makedirs(Main_dir)
 
@@ -208,6 +211,16 @@ downloadables["Office_Hours"]=[]  # track Id = 3
 downloadables["Q_&_A"]=[]         # track Id = 4
 downloadables["Others"]=[]
 
+downloadablesFileSize={}
+downloadablesFileSize["Lectures"]=0
+downloadablesFileSize["Subtitles"]=0
+downloadablesFileSize["Problem_Set"]=0
+downloadablesFileSize["Office_Hours"]=0
+downloadablesFileSize["Q_&_A"]=0
+downloadablesFileSize["Others"]=0
+
+
+
 errorLog=[]
 
 for a in anchors:
@@ -217,34 +230,72 @@ for a in anchors:
           temp_link=a['href'].lower()
           if is_lecture(temp_link):
              downloadables["Lectures"].append(a['href'])
+             # for filesize
+             res = requests.head(a['href'])
+             downloadablesFileSize["Lectures"]=downloadablesFileSize["Lectures"]+int(res.headers["content-length"])
              track_id=0
+
           elif is_subtitle(temp_link):
                downloadables["Subtitles"].append(a['href'])
+               # for filesize
+               res = requests.head(a['href'])
+               downloadablesFileSize["Subtitles"]=downloadablesFileSize["Subtitles"]+int(res.headers["content-length"])
                track_id=1
+
           elif is_problemSet(temp_link):
                downloadables["Problem_Set"].append(a['href'])
+               # for filesize
+               res = requests.head(a['href'])
+               downloadablesFileSize["Problem_Set"]=downloadablesFileSize["Problem_Set"]+int(res.headers["content-length"])
                track_id=2
+
           elif is_Office_Hours(temp_link):
                downloadables["Office_Hours"].append(a['href'])
+               # for filesize
+               res = requests.head(a['href'])
+               downloadablesFileSize["Office_Hours"]=downloadablesFileSize["Office_Hours"]+int(res.headers["content-length"])
                track_id=3
+
           elif is_Q_and_A(temp_link):
                downloadables["Q_&_A"].append(a['href'])
+               # for filesize
+               res = requests.head(a['href'])
+               downloadablesFileSize["Q_&_A"]=downloadablesFileSize["Q_&_A"]+int(res.headers["content-length"])
                track_id=4
           else:
                if track_id==0:
                   downloadables["Lectures"].append(a['href'])
+                  # for filesize
+                  res = requests.head(a['href'])
+                  downloadablesFileSize["Lectures"]=downloadablesFileSize["Lectures"]+int(res.headers["content-length"])
                elif track_id==1:
                     downloadables["Subtitles"].append(a['href'])
+                    # for filesize
+                    res = requests.head(a['href'])
+                    downloadablesFileSize["Subtitles"]=downloadablesFileSize["Subtitles"]+int(res.headers["content-length"])
                elif track_id==2:
                     downloadables["Problem_Set"].append(a['href'])
+                    # for filesize
+                    res = requests.head(a['href'])
+                    downloadablesFileSize["Problem_Set"]=downloadablesFileSize["Problem_Set"]+int(res.headers["content-length"])
+
                elif track_id==3:
                     downloadables["Office_Hours"].append(a['href'])
+                    # for filesize
+                    res = requests.head(a['href'])
+                    downloadablesFileSize["Office_Hours"]=downloadablesFileSize["Office_Hours"]+int(res.headers["content-length"])
                elif track_id==4:
                     downloadables["Q_&_A"].append(a['href'])
+                    # for filesize
+                    res = requests.head(a['href'])
+                    downloadablesFileSize["Q_&_A"]=downloadablesFileSize["Q_&_A"]+int(res.headers["content-length"])
                else:
                     downloadables["Others"].append(a['href'])
+                    # for filesize
+                    res = requests.head(a['href'])
+                    downloadablesFileSize["Others"]=downloadablesFileSize["Others"]+int(res.headers["content-length"])
 #print downloadables
-
+print("--- %s seconds to read and write from udacity ---" % (time.time() - start_time))
 
 """
 for key in downloadables:
@@ -258,17 +309,17 @@ for key in downloadables:
             path=path+"/"+filename
             subprocess.call(["curl" ,"-L","-C","-",url,"-o",path])
 """
-filesize=0
+
 start_time = time.time()
 for key in downloadables:
 
     filesize=0
-    total=965019
-    if key=="Subtitles":
-       if  len(downloadables[key]) > 0:
-           if not os.path.exists(Main_dir+"/"+key):
-                  os.makedirs(Main_dir+"/"+key)
-           download(key,total)        
+    #total=965019
+    total=downloadablesFileSize[key]
+    if  len(downloadables[key]) > 0:
+        if not os.path.exists(Main_dir+"/"+key):
+               os.makedirs(Main_dir+"/"+key)
+        download(key,total)        
 print("--- %s seconds to read and write ---" % (time.time() - start_time))
 
 errString="["
